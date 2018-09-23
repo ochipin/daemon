@@ -83,6 +83,10 @@ func (daemon *Daemon) Stat() error {
 	if err != nil {
 		// プロセスIDを取得する
 		pid := fmt.Sprint(os.Getpid())
+		// ディレクトリが存在しない場合、ディレクトリを作成する
+		if dir, _ := filepath.Split(daemon.Pidfile); dir != "" {
+			os.MkdirAll(dir, 0755)
+		}
 		// 権限等で、書き込めない場合はエラーとする
 		if err = ioutil.WriteFile(daemon.Pidfile, []byte(pid), 0600); err != nil {
 			return err
@@ -97,7 +101,8 @@ func (daemon *Daemon) Stat() error {
 
 	// Pidfileが存在している場合、Pidfileを読み込む
 	buf, _ := ioutil.ReadFile(daemon.Pidfile)
-	pidnum, err := strconv.Atoi(string(buf)) // 数値に変換できない場合は、エラーとする
+	// Pidfileの内容が、数字に変換できない場合はエラーとする
+	pidnum, err := strconv.Atoi(string(buf))
 	if err != nil {
 		return fmt.Errorf("'%s' already exists", f.Name())
 	}
@@ -254,7 +259,7 @@ func (daemon *Daemon) Daemon(options []string) error {
 		os.Setenv(daemon.Envname, StartingDaemon)
 		// 指定されたコマンドを実行する
 		if err := daemon.StartProc(options); err != nil {
-			fmt.Fprintf(daemon.Stderr, "%s\n", string(err.Error()))
+			// fmt.Fprintf(daemon.Stderr, "%s\n", string(err.Error()))
 			return err
 		}
 		return nil

@@ -26,6 +26,8 @@ const (
 	StartingDaemon = "0"
 	// StartedDaemon : デーモン起動完了
 	StartedDaemon = "1"
+	// FailedDaemon : デーモン起動失敗
+	FailedDaemon = "2"
 )
 
 // New : Daemon構造体を初期化する
@@ -229,6 +231,7 @@ func (daemon *Daemon) MySelf() error {
 		if err != nil {
 			daemon.Pipeline(err)
 			os.Remove(daemon.Pidfile)
+			os.Setenv(daemon.Envname, FailedDaemon)
 			return err
 			// os.Exit(2)
 		}
@@ -259,7 +262,8 @@ func (daemon *Daemon) Daemon(options []string) error {
 		os.Setenv(daemon.Envname, StartingDaemon)
 		// 指定されたコマンドを実行する
 		if err := daemon.StartProc(options); err != nil {
-			// fmt.Fprintf(daemon.Stderr, "%s\n", string(err.Error()))
+			// 起動失敗の場合は、環境変数にセット
+			os.Setenv(daemon.Envname, FailedDaemon)
 			return err
 		}
 		return nil

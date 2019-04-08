@@ -36,9 +36,6 @@ func New() (*Daemon, error) {
 	_, appname := filepath.Split(os.Args[0])
 	// デフォルトでは、出力先をシスログとする
 	logger, err := syslog.New(syslog.LOG_ALERT|syslog.LOG_USER, appname)
-	if err != nil {
-		return nil, err
-	}
 	// 初期設定のみを施し、呼び出し側へ返却する
 	return &Daemon{
 		StartWait:  1000,
@@ -54,7 +51,7 @@ func New() (*Daemon, error) {
 		Exec: func() error {
 			return fmt.Errorf("%s: daemon.Exec() failed. not implemented yet", appname)
 		},
-	}, nil
+	}, err
 }
 
 // Daemon : デーモン起動に必要な情報を取り扱う構造体
@@ -246,7 +243,7 @@ func (daemon *Daemon) MySelf() error {
 	// PIDファイルが残っている場合削除する
 	os.Remove(daemon.Pidfile)
 	// スレッド終了後、エラーが発生した場合、ログへ情報を出力する
-	if err != nil {
+	if err != nil && daemon.Writer != nil {
 		fmt.Fprintf(daemon.Writer, "%s\n", err)
 		return err
 	}
